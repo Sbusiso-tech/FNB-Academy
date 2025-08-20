@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>API Key Verification | Contact Manager</title>
+    <link rel="stylesheet" href="css/api-key.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <img
+                  src="https://itvarsity.org/wp-content/uploads/2020/04/ITv-Logo.png"
+                  alt="IT Varsity Logo"
+                  class="logo"
+                />
+                <h1>API Key Verification</h1>
+                <p>Please enter your valid API key to access the Contact Manager</p>
+            </div>
+
+            <form id="apiKeyForm" class="auth-form" aria-label="API Key Verification Form">
+                <div class="form-group">
+                    <div class="input-with-icon">
+                        <input type="password" id="apiKey" name="apiKey" placeholder="Enter your API key" required />
+                    </div>
+                    <div class="error-message" id="apiKey-error" aria-live="polite"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" id="submitApiKey" class="btn btn-primary btn-block">
+                        <i class="fas fa-unlock-alt"></i> Verify &amp; Continue
+                    </button>
+                </div><br /><br />
+                
+                <div class="form-group" style="margin-top: 1rem; text-align: center;">
+                    <p>Don't have an API key? <button type="button" id="requestKey" class="btn btn-secondary">Request one</button></p>
+                </div>
+            </form>
+
+            <div id="loading" class="loading-spinner" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i> Verifying API key...
+            </div>
+        </div>
+
+        <div
+          id="successModal"
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="successModalTitle"
+          tabindex="0"
+        >
+            <div class="modal-content">
+                <div class="modal-icon success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <h3 id="successModalTitle">API Key Verified Successfully!</h3>
+                <p>
+                  You have successfully verified your API key. You will be redirected shortly.
+                </p>
+                <div class="modal-actions">
+                    <button id="closeSuccess" class="btn btn-primary">Close</button>
+                </div>
+            </div>
+        </div>
+
+        <div
+          id="notificationModal"
+          class="modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="notificationModalTitle"
+          tabindex="0"
+        >
+            <div class="modal-content">
+                <h3 id="notificationModalTitle">Verification Failed</h3>
+                <p id="notificationMessage">Invalid API key entered. Please try again.</p>
+                <div class="modal-actions">
+                    <button id="closeNotification" class="btn btn-primary">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rootPath = "https://mysite.itvarsity.org/api/ContactBook/";
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiKeyForm = document.getElementById('apiKeyForm');
+            const successModal = document.getElementById('successModal');
+            const closeSuccessBtn = document.getElementById('closeSuccess');
+            const notificationModal = document.getElementById('notificationModal');
+            const closeNotificationBtn = document.getElementById('closeNotification');
+            const notificationMessage = document.getElementById('notificationMessage');
+            const apiKeyInput = document.getElementById('apiKey');
+            const apiKeyError = document.getElementById('apiKey-error');
+            const loadingSpinner = document.getElementById('loading');
+            const submitBtn = document.getElementById('submitApiKey');
+
+            apiKeyForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                apiKeyError.textContent = '';
+                notificationMessage.textContent = '';
+                loadingSpinner.style.display = 'flex';
+                submitBtn.disabled = true;
+
+                const apiKey = apiKeyInput.value.trim();
+                if (!apiKey) {
+                    apiKeyError.textContent = 'API key is required';
+                    loadingSpinner.style.display = 'none';
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                fetch(rootPath + "controller/api-key/?apiKey=" + encodeURIComponent(apiKey))
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
+.then(function(data) {
+    if (data == "1") 
+    {
+        localStorage.setItem("apiKey", apiKey);
+        // Immediately navigate to index.html on successful verification
+        window.location.href = 'index.html';
+    } 
+    else 
+    {
+        throw new Error(data || "Invalid API key entered");
+    }
+})
+                    .catch(function(error) {
+                        let errorMessage = error.message;
+                        if (errorMessage === "0") {
+                            errorMessage = "Invalid API key entered. Please try again.";
+                        }
+                        notificationMessage.textContent = errorMessage;
+                        notificationModal.style.display = 'block';
+                        apiKeyError.textContent = errorMessage;
+                    })
+                    .finally(function() {
+                        loadingSpinner.style.display = 'none';
+                        submitBtn.disabled = false;
+                    });
+            });
+
+            closeSuccessBtn.addEventListener('click', function() {
+                successModal.style.display = 'none';
+                window.location.href = 'index.html';
+            });
+
+            closeNotificationBtn.addEventListener('click', function() {
+                notificationModal.style.display = 'none';
+                apiKeyInput.focus();
+            });
+
+            // Load stored API key if available
+            const storedKey = localStorage.getItem("apiKey");
+            if (storedKey) {
+                apiKeyInput.value = storedKey;
+            }
+        });
+
+        document.getElementById('requestKey').addEventListener('click', function() {
+            window.location.href = 'request-api-key.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Contact | Contact Manager</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1><i class="fas fa-user-plus"></i> Add New Contact</h1>
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='index.html'">
+                <i class="fas fa-arrow-left"></i> Back to Contacts
+            </button>
+        </header>
+
+        <main class="form-container">
+            <form id="editForm" class="contact-form">
+                <div class="form-group">
+                    <label for="firstname">First Name*</label>
+                    <input type="text" name="firstname" id="firstname" required>
+                    <div class="error-message" id="firstname-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="lastname">Last Name*</label>
+                    <input type="text" name="lastname" id="lastname" required>
+                    <div class="error-message" id="lastname-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="mobile">Phone Number</label>
+                    <input type="tel" name="mobile" id="mobile" pattern="[0-9]{10,15}">
+                    <div class="error-message" id="mobile-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email*</label>
+                    <input type="email" name="email" id="email" required>
+                    <div class="error-message" id="email-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select name="category" id="category">
+                        <option value="personal">Personal</option>
+                        <option value="work">Work</option>
+                        <option value="family">Family</option>
+                        <option value="friend">Friend</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Address</label>
+                    <textarea name="address" id="address" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="birthday">Birthday</label>
+                    <input type="date" name="birthday" id="birthday">
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea name="notes" id="notes" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="favorite" id="favorite">
+                        <span class="checkmark"></span>
+                        Mark as Favorite
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="avatar">Profile Picture</label>
+                    <div class="file-upload-container">
+                        <label for="avatar" class="file-upload-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span id="file-name">Choose a file (max 2MB)</span>
+                            <span class="file-requirements">JPEG, PNG or GIF (2MB max)</span>
+                        </label>
+                        <input type="file" name="avatar" id="avatar" accept="image/jpeg,image/png,image/gif">
+                        <div class="error-message" id="avatar-error"></div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Contact
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='index.html'">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </form>
+        </main>
+
+        <div id="notification" class="notification"></div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // File upload preview
+            const avatarInput = document.getElementById('avatar');
+            const fileNameSpan = document.getElementById('file-name');
+            
+            avatarInput.addEventListener('change', function(e) {
+                if (this.files.length > 0) {
+                    fileNameSpan.textContent = this.files[0].name;
+                } else {
+                    fileNameSpan.textContent = 'Choose a file (max 2MB)';
+                }
+            });
+
+            // Form submission
+            document.getElementById('editForm').addEventListener('submit', submitForm);
+        });
+
+        function submitForm(e) {
+            e.preventDefault();
+            clearErrors();
+
+            // Validate form
+            if (!validateForm()) {
+                return;
+            }
+
+            const form = new FormData(document.querySelector('#editForm'));
+            form.append('apiKey', apiKey);
+
+            // Show loading state
+            const submitBtn = document.querySelector('#editForm button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            fetch(rootPath + 'controller/insert-contact/', {
+                method: 'POST',
+                headers: {'Accept': 'application/json, *.*'},
+                body: form
+            })
+            .then(function(response) {     
+                return response.text();
+            })
+            .then(function(data) {
+                if(data == "1") {
+                    showNotification('Contact added successfully!', 'success');
+                    setTimeout(() => window.location.href = 'index.html', 1500);
+                } else {
+                    showNotification('Error adding contact: ' + data, 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Contact';
+                }
+            })
+            .catch(function(error) {
+                showNotification('Network error: ' + error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Contact';
+            });
+        }
+
+        function validateForm() {
+            let isValid = true;
+            const firstname = document.getElementById('firstname').value.trim();
+            const lastname = document.getElementById('lastname').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const mobile = document.getElementById('mobile').value.trim();
+            const avatar = document.getElementById('avatar').files[0];
+            const maxFileSize = 2 * 1024 * 1024; // 2MB
+
+            if (!firstname) {
+                showError('firstname-error', 'First name is required');
+                isValid = false;
+            }
+
+            if (!lastname) {
+                showError('lastname-error', 'Last name is required');
+                isValid = false;
+            }
+
+            if (!email) {
+                showError('email-error', 'Email is required');
+                isValid = false;
+            } else if (!validateEmail(email)) {
+                showError('email-error', 'Please enter a valid email');
+                isValid = false;
+            }
+
+            if (mobile && !validatePhone(mobile)) {
+                showError('mobile-error', 'Please enter a valid phone number');
+                isValid = false;
+            }
+
+            if (avatar && avatar.size > maxFileSize) {
+                showError('avatar-error', 'File size exceeds 2MB limit');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function validatePhone(phone) {
+            const re = /^[0-9]{10,15}$/;
+            return re.test(phone);
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

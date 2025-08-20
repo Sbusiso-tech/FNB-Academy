@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Contact | Contact Manager</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1><i class="fas fa-user-edit"></i> Edit Contact</h1>
+            <button type="button" class="btn btn-secondary" onclick="window.location.href='index.html'">
+                <i class="fas fa-arrow-left"></i> Back to Contacts
+            </button>
+        </header>
+
+        <main class="form-container">
+            <div id="loading" class="loading-spinner">
+                <i class="fas fa-spinner fa-spin"></i> Loading contact...
+            </div>
+
+            <div id="contactContainer" style="display: none;">
+                <div class="contact-header">
+                    <div class="avatar-container">
+                        <img id="contactAvatar" src="" alt="Contact Avatar" class="contact-avatar-large">
+                        <label for="avatar" class="avatar-upload-btn">
+                            <i class="fas fa-camera"></i>
+                        </label>
+                        <input type="file" id="avatar" name="avatar" accept="image/jpeg,image/png,image/gif">
+                    </div>
+                    <h2 id="contactName"></h2>
+                </div>
+
+                <form id="editForm" class="contact-form">
+                    <div class="form-group">
+                        <label for="firstname">First Name*</label>
+                        <input type="text" id="firstname" name="firstname" readonly>
+                        <div class="error-message" id="firstname-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastname">Last Name*</label>
+                        <input type="text" id="lastname" name="lastname" readonly>
+                        <div class="error-message" id="lastname-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mobile">Phone Number</label>
+                        <input type="tel" id="mobile" name="mobile" pattern="[0-9]{10,15}" readonly>
+                        <div class="error-message" id="mobile-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email*</label>
+                        <input type="email" id="email" name="email" readonly>
+                        <div class="error-message" id="email-error"></div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select id="category" name="category" disabled>
+                            <option value="personal">Personal</option>
+                            <option value="work">Work</option>
+                            <option value="family">Family</option>
+                            <option value="friend">Friend</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <textarea id="address" name="address" rows="3" readonly></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="birthday">Birthday</label>
+                        <input type="date" id="birthday" name="birthday" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" name="notes" rows="3" readonly></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="favorite" name="favorite" disabled>
+                            <span class="checkmark"></span>
+                            Mark as Favorite
+                        </label>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" id="editBtn" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Edit Contact
+                        </button>
+                        <button type="submit" id="saveBtn" class="btn btn-success" style="display: none;">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <button type="button" id="cancelBtn" class="btn btn-secondary" style="display: none;">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="button" id="deleteBtn" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i> Delete Contact
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <div id="notification" class="notification"></div>
+        <div id="confirmationModal" class="modal">
+            <div class="modal-content">
+                <h3>Confirm Deletion</h3>
+                <p>Are you sure you want to delete this contact? This action cannot be undone.</p>
+                <div class="modal-actions">
+                    <button id="confirmDelete" class="btn btn-danger">Delete</button>
+                    <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for full-size image preview -->
+    <div id="imageModal" class="modal">
+        <span id="closeModal" class="close">&times;</span>
+        <img class="modal-content" id="modalImage" alt="Full Size Image">
+    </div>
+
+    <style>
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 3000;
+            padding-top: 60px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.8);
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            animation-name: zoomIn;
+            animation-duration: 0.3s;
+        }
+
+        @keyframes zoomIn {
+            from {transform: scale(0.7);}
+            to {transform: scale(1);}
+        }
+
+        .close {
+            position: absolute;
+            top: 20px;
+            right: 35px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+            user-select: none;
+        }
+
+        .close:hover,
+        .close:focus {
+            color: #bbb;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+
+    <script src="js/config.js"></script>
+    <script>
+        let id = getId();
+        let isEditMode = false;
+        let originalData = {};
+
+        document.addEventListener('DOMContentLoaded', function() {
+            getContact();
+            
+            document.getElementById('editBtn').addEventListener('click', toggleEditMode);
+            document.getElementById('cancelBtn').addEventListener('click', cancelEdit);
+            document.getElementById('saveBtn').addEventListener('click', submitForm);
+            document.getElementById('deleteBtn').addEventListener('click', showDeleteConfirmation);
+            document.getElementById('confirmDelete').addEventListener('click', deleteContact);
+            document.getElementById('cancelDelete').addEventListener('click', hideDeleteConfirmation);
+            document.getElementById('avatar').addEventListener('change', handleAvatarChange);
+
+            // Add click event to preview image to open full size modal
+            const contactAvatar = document.getElementById('contactAvatar');
+            const imageModal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const closeModal = document.getElementById('closeModal');
+
+            if (contactAvatar && imageModal && modalImage && closeModal) {
+                contactAvatar.style.cursor = 'pointer';
+                contactAvatar.addEventListener('click', function() {
+                    if (contactAvatar.src) {
+                        modalImage.src = contactAvatar.src;
+                        imageModal.style.display = 'block';
+                    }
+                });
+
+                closeModal.addEventListener('click', function() {
+                    imageModal.style.display = 'none';
+                });
+
+                imageModal.addEventListener('click', function(event) {
+                    if (event.target === imageModal) {
+                        imageModal.style.display = 'none';
+                    }
+                });
+            }
+        });
+
+        function getId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
+        function getContact() {
+            fetch(rootPath + 'controller/get-contacts/?id=' + id)
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data && data.length > 0) {
+                        displayContact(data[0]);
+                        originalData = {...data[0]};
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('contactContainer').style.display = 'block';
+                    } else {
+                        showNotification('Contact not found', 'error');
+                        setTimeout(() => window.location.href = 'index.html', 2000);
+                    }
+                })
+                .catch(function(error) {
+                    showNotification('Error loading contact: ' + error.message, 'error');
+                    document.getElementById('loading').style.display = 'none';
+                });
+        }
+
+        function displayContact(contact) {
+            // Set avatar
+            const avatarUrl = contact.avatar ? 
+                `${rootPath}controller/uploads/${contact.avatar}` : 
+                `${rootPath}images/default-avatar.png`;
+            document.getElementById('contactAvatar').src = avatarUrl;
+            
+            // Set name in header
+            document.getElementById('contactName').textContent = 
+                `${contact.firstname} ${contact.lastname}`;
+            
+            // Set form values
+            document.getElementById('firstname').value = contact.firstname || '';
+            document.getElementById('lastname').value = contact.lastname || '';
+            document.getElementById('mobile').value = contact.mobile || '';
+            document.getElementById('email').value = contact.email || '';
+            document.getElementById('category').value = contact.category || 'personal';
+            document.getElementById('address').value = contact.address || '';
+            document.getElementById('birthday').value = contact.birthday || '';
+            document.getElementById('notes').value = contact.notes || '';
+            document.getElementById('favorite').checked = contact.favorite || false;
+        }
+
+function toggleEditMode() {
+            isEditMode = !isEditMode;
+            
+            const fields = ['firstname', 'lastname', 'mobile', 'email', 'category', 'address', 'birthday', 'notes', 'favorite'];
+            fields.forEach(field => {
+                const element = document.getElementById(field);
+                if (element) {
+                    if (isEditMode) {
+                        element.removeAttribute('readonly');
+                        element.removeAttribute('disabled');
+                    } else {
+                        element.setAttribute('readonly', true);
+                        if (element.tagName === 'SELECT' || element.type === 'checkbox') {
+                            element.setAttribute('disabled', true);
+                        }
+                    }
+                }
+            });
+
+            // Enable or disable avatar input based on edit mode
+            const avatarInput = document.getElementById('avatar');
+            if (avatarInput) {
+                avatarInput.disabled = !isEditMode;
+            }
+
+            document.getElementById('editBtn').style.display = isEditMode ? 'none' : 'block';
+            document.getElementById('saveBtn').style.display = isEditMode ? 'block' : 'none';
+            document.getElementById('cancelBtn').style.display = isEditMode ? 'block' : 'none';
+            document.getElementById('deleteBtn').style.display = isEditMode ? 'none' : 'block';
+        }
+
+        function cancelEdit() {
+            // Restore original values
+            displayContact(originalData);
+            toggleEditMode();
+        }
+
+        function handleAvatarChange(e) {
+            const file = e.target.files[0];
+            const maxFileSize = 2 * 1024 * 1024; // 2MB
+            
+            if (file) {
+                if (file.size > maxFileSize) {
+                    showNotification('File size exceeds 2MB limit', 'error');
+                    e.target.value = '';
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('contactAvatar').src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function submitForm(e) {
+            e.preventDefault();
+            clearErrors();
+
+            // Validate form
+            if (!validateForm()) {
+                return;
+            }
+
+            const form = new FormData(document.querySelector('#editForm'));
+            form.append('apiKey', apiKey);
+            form.append('id', id);
+
+            // Show loading state
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            fetch(rootPath + 'controller/edit-contact/', {
+                method: 'POST',
+                headers: {'Accept': 'application/json, *.*'},
+                body: form
+            })
+            .then(function(response) {     
+                return response.text();
+            })
+            .then(function(data) {
+                if(data == "1") {
+                    showNotification('Contact updated successfully!', 'success');
+                    toggleEditMode();
+                    getContact(); // Refresh the contact data
+                } else {
+                    showNotification('Error updating contact: ' + data, 'error');
+                }
+            })
+            .catch(function(error) {
+                showNotification('Network error: ' + error.message, 'error');
+            })
+            .finally(() => {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+            });
+        }
+
+        function validateForm() {
+            let isValid = true;
+            const firstname = document.getElementById('firstname').value.trim();
+            const lastname = document.getElementById('lastname').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const mobile = document.getElementById('mobile').value.trim();
+            const avatar = document.getElementById('avatar').files[0];
+            const maxFileSize = 2 * 1024 * 1024; // 2MB
+
+            if (!firstname) {
+                showError('firstname-error', 'First name is required');
+                isValid = false;
+            }
+
+            if (!lastname) {
+                showError('lastname-error', 'Last name is required');
+                isValid = false;
+            }
+
+            if (!email) {
+                showError('email-error', 'Email is required');
+                isValid = false;
+            } else if (!validateEmail(email)) {
+                showError('email-error', 'Please enter a valid email');
+                isValid = false;
+            }
+
+            if (mobile && !validatePhone(mobile)) {
+                showError('mobile-error', 'Please enter a valid phone number');
+                isValid = false;
+            }
+
+            if (avatar && avatar.size > maxFileSize) {
+                showNotification('File size exceeds 2MB limit', 'error');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function validatePhone(phone) {
+            const re = /^[0-9]{10,15}$/;
+            return re.test(phone);
+        }
+
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.textContent = '';
+                el.style.display = 'none';
+            });
+        }
+
+        function showDeleteConfirmation() {
+            document.getElementById('confirmationModal').style.display = 'block';
+        }
+
+        function hideDeleteConfirmation() {
+            document.getElementById('confirmationModal').style.display = 'none';
+        }
+
+        function deleteContact() {
+            hideDeleteConfirmation();
+            
+            fetch(rootPath + 'controller/delete-contact/?id=' + id + '&apiKey=' + apiKey)
+                .then(function(response) {
+                    return response.text();
+                })
+                .then(function(data) {
+                    if(data == "1") {
+                        showNotification('Contact deleted successfully!', 'success');
+                        setTimeout(() => window.location.href = 'index.html', 1500);
+                    } else {
+                        showNotification('Error deleting contact: ' + data, 'error');
+                    }
+                })
+                .catch(function(error) {
+                    showNotification('Network error: ' + error.message, 'error');
+                });
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

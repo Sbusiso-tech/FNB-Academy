@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Book</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1><i class="fas fa-address-book"></i> Contact Manager</h1>
+            <div class="header-actions">
+                <button id="addContact" class="btn btn-primary" onclick="window.location.href='add-contact.html'">
+                    <i class="fas fa-plus"></i> Add Contact
+                </button>
+                <button id="refresh" class="btn btn-secondary" onclick="fetchContacts()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </header>
+
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Search contacts..." onkeyup="searchContacts()">
+            <i class="fas fa-search search-icon"></i>
+        </div>
+
+        <div class="filter-container">
+            <select id="filterSelect" onchange="filterContacts()">
+                <option value="all">All Contacts</option>
+                <option value="favorites">Favorites Only</option>
+                <option value="work">Work Contacts</option>
+                <option value="personal">Personal Contacts</option>
+            </select>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <i class="fas fa-users"></i>
+                <span id="totalContacts">0</span>
+                <p>Total Contacts</p>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-star"></i>
+                <span id="favoriteContacts">0</span>
+                <p>Favorites</p>
+            </div>
+        </div>
+
+        <div id="loading" class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i> Loading contacts...
+        </div>
+
+        <div id="table" class="contacts-table-container">
+            <!-- Contacts will be loaded here -->
+        </div>
+
+        <div id="noContacts" class="no-contacts">
+            <i class="fas fa-user-slash"></i>
+            <p>No contacts found. Add your first contact!</p>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
